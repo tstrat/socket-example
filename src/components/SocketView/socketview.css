@@ -1,0 +1,18 @@
+.socket-view-chat {
+    display: flex;
+    width: 100vw;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.messages {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.message {
+    width: 400px;
+    border: 1px solid purple;
+}
