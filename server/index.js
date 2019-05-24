@@ -1,52 +1,23 @@
 const express = require('express');
-const massive = require('massive');
-require('dotenv').config();
 const app = express();
+
+// socket modules
 const server = require('http').Server(app);
-const config = { pingTimeout: 60000 };
+const io = require('socket.io')(server);
+const socketController = require('./controllers/socketController');
 
-const io = require('socket.io')(server, config);
-
-const { SERVER_PORT, CONNECTION_STRING } = process.env;
-
-massive(CONNECTION_STRING).then(dbInstance => {
-    app.set('db', dbInstance);
-    console.log('Successfully Connected to Database');
-});
-
-//endpoints here
-
-server.listen(SERVER_PORT || 4000, () =>
-    console.log(`Server started, port: SERVER_PORT
-Don't spook the monkey 🙈`)
-);
-
-let users = [];
 io.on('connection', socket => {
-    console.log('-new connection to server-', socket.id);
+    // When a client connects run this function
+    console.log('A connection happened', socket.id);
 
-    socket.on('join', data => {
-        socket.emit('login', {
-            users: users,
-            message: {
-                username: 'Server',
-                message: '- Welcome to Socket.IO Chat -'
-            }
-        });
-        users.push({ id: socket.id, name: data });
-        io.emit('user joined', users);
-    });
+    // When the client sends 'needy' and a roomid add them to the room
+    socket.on('needy', roomid => socketController.joinRoom(roomid, socket, io));
 
-    socket.on('new message', data => {
-        io.emit('new message', data);
-    });
-
-    socket.on('disconnect', () => {
-        let index = users.findIndex(u => u.id === socket.id);
-        if (index > -1) {
-            users.splice(index, 1);
-        }
-        console.log('disconnect', users);
-        io.emit('user left', users);
-    });
+    // When the client sends a message to the server send it to everyone
+    socket.on('message to server', payload =>
+        socketController.sendMessageToRoom(payload, io)
+    );
 });
+
+// SERVER instead of APP
+server.listen(4000, () => console.log('Best LESSON EVER! Sockets are cool'));
